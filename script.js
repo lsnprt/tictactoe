@@ -170,13 +170,18 @@ const BoardController = (() => {
     }
 
     if (Game.getGameOver()) {
+      // eslint-disable-next-line no-use-before-define
+      boardDiv.removeEventListener('click', clickHandler);
       displayWinner();
       return;
     }
-    turnDiv.textContent = Game.getActivePlayer().getName();
+    turnDiv.textContent = `${Game.getActivePlayer().getName()}'s turn `;
   };
 
-  boardDiv.addEventListener('click', (e) => {
+  // eslint-disable-next-line no-use-before-define
+  boardDiv.addEventListener('click', clickHandler);
+
+  function clickHandler(e) {
     if (e.target.innerText === '' && e.target.nodeName === 'BUTTON') {
       const eventCoordinates = Coordinate(
         e.target.dataset.x,
@@ -185,7 +190,9 @@ const BoardController = (() => {
       Game.playRound(eventCoordinates);
       updateDisplay();
     }
-  });
+  }
 
   return { updateDisplay };
 })();
+
+window.addEventListener('load', BoardController.updateDisplay);

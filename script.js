@@ -1,5 +1,4 @@
 // Player object factory
-
 const Player = (name, marker) => {
   const getName = () => name;
   const getMarker = () => marker;
@@ -19,18 +18,19 @@ const Cell = () => {
 
   const getMarker = () => marker ?? 'E';
 
-  return { getMarker, setMarker };
+  return { marker, getMarker, setMarker };
 };
 
+// Coordinate object factory
 const Coordinate = (x, y) => ({ x, y });
 
 // Game board module
 const GameBoard = (() => {
   const board = [];
   const rows = 3;
-  const columns = 3;
+  const columns = rows;
 
-  // Initialize gameboard
+  // Initialize game board
   for (let i = 0; i < rows; i++) {
     board[i] = [];
     for (let j = 0; j < columns; j++) {
@@ -38,9 +38,9 @@ const GameBoard = (() => {
     }
   }
 
-  const getGameBoard = () => board;
+  const getBoard = () => board;
 
-  const printGameBoard = () => {
+  const printBoard = () => {
     console.clear();
     for (let i = 0; i < rows; i++) {
       let row = '';
@@ -55,7 +55,51 @@ const GameBoard = (() => {
     board[coordinate.x][coordinate.y].setMarker(marker);
   };
 
-  return { fillCell, getGameBoard, printGameBoard };
+  const lookForThree = (coordinate, marker) => {
+    // Check row
+    for (let i = 0; i < columns; i++) {
+      if (board[coordinate.x][i].getMarker() !== marker) {
+        break;
+      } else if (i === columns - 1) {
+        return true;
+      }
+    }
+
+    // Check column
+    for (let i = 0; i < rows; i++) {
+      if (board[i][coordinate.y].getMarker() !== marker) {
+        break;
+      } else if (i === rows - 1) {
+        return true;
+      }
+    }
+
+    // Check diagonal 1
+    if (coordinate.x === coordinate.y) {
+      for (let i = 0; i < rows; i++) {
+        if (board[i][i].getMarker() !== marker) {
+          break;
+        } else if (i === rows - 1) {
+          return true;
+        }
+      }
+    }
+
+    // Check diagonal 2
+    if (coordinate.x === rows - 1 - coordinate.y) {
+      for (let i = 0; i < rows; i++) {
+        if (board[i][rows - 1 - i].getMarker() !== marker) {
+          break;
+        } else if (i === rows - 1) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  };
+
+  return { fillCell, getBoard, printBoard, lookForThree };
 })();
 
 const Game = (() => {
@@ -70,14 +114,20 @@ const Game = (() => {
   const getActivePlayer = () => console.log(activePlayer.getName());
 
   const printRound = () => {
-    GameBoard.printGameBoard();
+    GameBoard.printBoard();
     getActivePlayer();
   };
 
+  const checkForWinner = (coordinate, marker) =>
+    GameBoard.lookForThree(coordinate, marker);
+
   const playRound = (coordinate) => {
     GameBoard.fillCell(coordinate, activePlayer.getMarker());
+
+    const winner = checkForWinner(coordinate, activePlayer.getMarker());
     changeActivePlayer();
     printRound();
+    console.log(winner);
   };
 
   printRound();

@@ -16,7 +16,7 @@ const Cell = () => {
     }
   };
 
-  const getMarker = () => marker ?? 'E';
+  const getMarker = () => marker;
 
   return { marker, getMarker, setMarker };
 };
@@ -106,31 +106,86 @@ const Game = (() => {
   const players = [Player('P1', 'X'), Player('P2', 'O')];
 
   let activePlayer = players[0];
+  let roundCounter = 0;
+  let gameOver = false;
+
+  const getGameOver = () => gameOver;
 
   const changeActivePlayer = () => {
     activePlayer = activePlayer === players[0] ? players[1] : players[0];
   };
 
-  const getActivePlayer = () => console.log(activePlayer.getName());
+  const getActivePlayer = () => activePlayer;
 
-  const printRound = () => {
-    GameBoard.printBoard();
-    getActivePlayer();
+  const endGame = (winnerFound) => {
+    gameOver = true;
+    activePlayer = winnerFound ? activePlayer : null;
   };
-
-  const checkForWinner = (coordinate, marker) =>
-    GameBoard.lookForThree(coordinate, marker);
 
   const playRound = (coordinate) => {
-    GameBoard.fillCell(coordinate, activePlayer.getMarker());
+    roundCounter++;
 
-    const winner = checkForWinner(coordinate, activePlayer.getMarker());
+    GameBoard.fillCell(coordinate, activePlayer.getMarker());
+    const winnerFound = GameBoard.lookForThree(
+      coordinate,
+      activePlayer.getMarker()
+    );
+
+    if (winnerFound || roundCounter === 9) {
+      endGame(winnerFound);
+      return;
+    }
+
     changeActivePlayer();
-    printRound();
-    console.log(winner);
   };
 
-  printRound();
+  return { getGameOver, getActivePlayer, playRound };
+})();
 
-  return { getActivePlayer, playRound };
+const BoardController = (() => {
+  const turnDiv = document.querySelector('.turn');
+  const boardDiv = document.querySelector('.board');
+
+  const displayWinner = () => {
+    if (Game.getActivePlayer() !== null) {
+      turnDiv.innerText = `${Game.getActivePlayer().getName()} wins!`;
+    } else {
+      turnDiv.innerText = `It's a tie!`;
+    }
+  };
+
+  const updateDisplay = () => {
+    boardDiv.textContent = '';
+
+    const board = GameBoard.getBoard();
+
+    for (let i = 0; i < board.length; i++) {
+      for (let j = 0; j < board[i].length; j++) {
+        const button = document.createElement('button');
+        button.innerText = board[i][j].getMarker();
+        button.dataset.x = i;
+        button.dataset.y = j;
+        boardDiv.appendChild(button);
+      }
+    }
+
+    if (Game.getGameOver()) {
+      displayWinner();
+      return;
+    }
+    turnDiv.textContent = Game.getActivePlayer().getName();
+  };
+
+  boardDiv.addEventListener('click', (e) => {
+    if (e.target.innerText === '' && e.target.nodeName === 'BUTTON') {
+      const eventCoordinates = Coordinate(
+        e.target.dataset.x,
+        e.target.dataset.y
+      );
+      Game.playRound(eventCoordinates);
+      updateDisplay();
+    }
+  });
+
+  return { updateDisplay };
 })();
